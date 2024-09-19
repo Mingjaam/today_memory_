@@ -3,6 +3,8 @@ import '../widgets/full_calendar.dart';
 import 'expanded_calendar_screen.dart';
 import '../services/ball_storage_service.dart';
 import '../screens/memory_storage_screen.dart';
+import '../screens/all_balls_screen.dart';
+import '../screens/settings_screen.dart';
 
 class CalendarScreen extends StatefulWidget {
   @override
@@ -12,8 +14,10 @@ class CalendarScreen extends StatefulWidget {
 class _CalendarScreenState extends State<CalendarScreen> {
   final BallStorageService _ballStorageService = BallStorageService();
   int _selectedIndex = 0;
-  Key _memoryStorageKey = UniqueKey();
   Key _calendarKey = UniqueKey();
+  Key _memoryStorageKey = UniqueKey();
+  final GlobalKey<AllBallsScreenState> _allBallsKey = GlobalKey<AllBallsScreenState>();
+  Key _settingsKey = UniqueKey();
 
   void _resetAllData() async {
     showDialog(
@@ -54,71 +58,71 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final bottomNavBarHeight = screenHeight * 0.08;
-
     return Scaffold(
-      body: SafeArea(
-        child: IndexedStack(
-          index: _selectedIndex,
-          children: [
-            FullCalendar(
-              key: _calendarKey,
-              onDaySelected: (selectedDay) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ExpandedCalendarScreen(selectedDate: selectedDay),
-                  ),
-                ).then((_) {
-                  setState(() {});
-                });
-              },
-            ),
-            MemoryStorageScreen(
-              key: _memoryStorageKey,
-              onMemoryUpdated: () {
-                setState(() {
-                  _memoryStorageKey = UniqueKey();
-                });
-              },
-            ),
-          ],
-        ),
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: [
+          FullCalendar(
+            key: _calendarKey,
+            onDaySelected: (selectedDay) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ExpandedCalendarScreen(selectedDate: selectedDay),
+                ),
+              ).then((_) {
+                setState(() {});
+              });
+            },
+          ),
+          MemoryStorageScreen(
+            key: _memoryStorageKey,
+            onMemoryUpdated: _onMemoryUpdated,
+          ),
+          AllBallsScreen(key: _allBallsKey),
+          SettingsScreen(key: _settingsKey),
+        ],
       ),
-      bottomNavigationBar: Container(
-        height: bottomNavBarHeight,
-        child: BottomNavigationBar(
-          items: const <BottomNavigationBarItem>[
-            BottomNavigationBarItem(
-              icon: Icon(Icons.calendar_today),
-              label: '캘린더',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.storage),
-              label: '기억저장소',
-            ),
-          ],
-          currentIndex: _selectedIndex,
-          selectedItemColor: Colors.blue,
-          unselectedItemColor: Colors.grey,
-          selectedFontSize: 10,
-          unselectedFontSize: 10,
-          iconSize: 20,
-          onTap: (index) {
-            setState(() {
-              _selectedIndex = index;
-              if (index == 0) {
-                _calendarKey = UniqueKey();
-              } else if (index == 1) {
-                _memoryStorageKey = UniqueKey();
-              }
-            });
-          },
-          selectedLabelStyle: TextStyle(height: 1.5),
-          unselectedLabelStyle: TextStyle(height: 1.5),
-          type: BottomNavigationBarType.fixed,
-        ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_today),
+            label: '캘린더',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.storage),
+            label: '기억저장소',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.bubble_chart),
+            label: '모든 공',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: '설정',
+          ),
+        ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: Colors.blue,
+        unselectedItemColor: Colors.grey,
+        onTap: (index) {
+          if (_selectedIndex == 2) {
+            // 모든 공 화면에서 다른 탭으로 이동할 때 공의 위치 저장
+            _allBallsKey.currentState?.saveBallPositions();
+          }
+          setState(() {
+            _selectedIndex = index;
+            if (index == 0) {
+              _calendarKey = UniqueKey();
+            } else if (index == 1) {
+              _memoryStorageKey = UniqueKey();
+            } else if (index == 3) {
+              _settingsKey = UniqueKey();
+            }
+            // AllBallsScreen의 키는 변경하지 않습니다.
+          });
+        },
+        type: BottomNavigationBarType.fixed,
       ),
     );
   }

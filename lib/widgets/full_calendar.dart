@@ -124,14 +124,12 @@ class _FullCalendarState extends State<FullCalendar> with SingleTickerProviderSt
             DateTime today = DateTime.now();
             DateTime tomorrow = DateTime(today.year, today.month, today.day).add(Duration(days: 1));
 
-
             if (selectedDay.isBefore(tomorrow)) {
-                setState(() {
+              setState(() {
                 _selectedDay = selectedDay;
                 _focusedDay = focusedDay;
               });
               _showExpandedDayView(selectedDay);
-
             } else {
               _showFutureWarning();
             }
@@ -224,41 +222,35 @@ class _FullCalendarState extends State<FullCalendar> with SingleTickerProviderSt
   }
 
   void _showExpandedDayView(DateTime selectedDay) {
-    if (selectedDay.isAfter(DateTime.now())) {
-      _showFutureWarning();
-    } else {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return Dialog(
-            backgroundColor: Colors.white,
-            insetPadding: EdgeInsets.all(20),
-            child: ExpandedDayView(
-              selectedDate: selectedDay,
-              onClose: (List<BallInfo> updatedBalls) async {
-                await _ballStorageService.saveBalls(selectedDay, updatedBalls);
-                _loadBallsForMonth(_focusedDay);
-                setState(() {});
-              },
-              onBallsChanged: () {
-                _loadBallsForMonth(_focusedDay);
-                setState(() {});
-              },
-              onMemoAdded: (SharedMemo memo) {
-                // 메모가 추가되었을 때의 로직
-                _loadBallsForMonth(_focusedDay);
-                setState(() {});
-              },
-              onMemoDeleted: (SharedMemo memo) {
-                // 메모가 삭제되었을 때의 로직
-                _loadBallsForMonth(_focusedDay);
-                setState(() {});
-              },
-            ),
-          );
-        },
-      );
-    }
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.white,
+          insetPadding: EdgeInsets.all(20),
+          child: ExpandedDayView(
+            selectedDate: selectedDay,
+            onClose: (List<BallInfo> updatedBalls) async {
+              await _ballStorageService.saveBalls(selectedDay, updatedBalls);
+              _loadBallsForMonth(_focusedDay);
+              setState(() {});
+            },
+            onBallsChanged: () {
+              _loadBallsForMonth(_focusedDay);
+              setState(() {});
+            },
+            onMemoAdded: (SharedMemo memo) {
+              _loadBallsForMonth(_focusedDay);
+              setState(() {});
+            },
+            onMemoDeleted: (SharedMemo memo) {
+              _loadBallsForMonth(_focusedDay);
+              setState(() {});
+            },
+          ),
+        );
+      },
+    );
   }
 
   void _showFutureWarning() {

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../services/theme_service.dart';
 import '../services/ball_storage_service.dart';
 
 class SettingsScreen extends StatelessWidget {
+  SettingsScreen({Key? key}) : super(key: key);
+
   final BallStorageService _ballStorageService = BallStorageService();
 
   @override
@@ -13,18 +13,6 @@ class SettingsScreen extends StatelessWidget {
         ListTile(
           title: Text('설정', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
         ),
-        Consumer<ThemeService>(
-          builder: (context, themeService, child) {
-            return SwitchListTile(
-              title: Text('다크 모드'),
-              value: themeService.isDarkMode,
-              onChanged: (value) {
-                themeService.toggleTheme();
-              },
-            );
-          },
-        ),
-        Divider(),
         ListTile(
           title: Text('전체 초기화'),
           trailing: Icon(Icons.warning, color: Colors.red),
