@@ -188,8 +188,8 @@ class BallStorageService {
 
   Future<void> saveNewBallInfos(List<BallInfo> newBallInfos) async {
     final prefs = await SharedPreferences.getInstance();
-    final newBallInfosJson = newBallInfos.map((info) => info.toJson()).toList();
-    await prefs.setString('new_ball_infos', jsonEncode(newBallInfosJson));
+    final newBallInfosJson = jsonEncode(newBallInfos.map((b) => b.toJson()).toList());
+    await prefs.setString('new_ball_infos', newBallInfosJson);
   }
 
   Future<List<BallInfo>> loadNewBallInfos() async {

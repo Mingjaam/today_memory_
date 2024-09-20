@@ -43,6 +43,7 @@ class AllBallsScreenState extends State<AllBallsScreen> with SingleTickerProvide
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initializeScreen();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _addWalls();
@@ -141,16 +142,14 @@ class AllBallsScreenState extends State<AllBallsScreen> with SingleTickerProvide
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    if (_needsSave) {
-      _saveBalls();
-    }
+    _saveBalls();
     _animationController.dispose();
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused) {
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
       _saveBalls();
     }
   }

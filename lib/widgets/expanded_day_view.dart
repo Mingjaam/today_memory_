@@ -54,6 +54,7 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
       _loadBalls();
       _addWalls();
       _loadMemos();
+      _loadNewBallInfos(); // 새로운 메서드 호출
     });
   }
 
@@ -93,19 +94,6 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
     });
     _needsSave = true;
     
-    final newBallInfo = BallInfo(
-      createdAt: createdAt,
-      color: color,
-      radius: size,
-      x: ball.body.position.x / dateBoxWidth,
-      y: ball.body.position.y / dateBoxHeight,
-    );
-    
-    setState(() {
-      _newBallInfos.add(newBallInfo); // 새 공 정보를 리스트에 추가
-    });
-
-    _ballStorageService.addBall(widget.selectedDate, newBallInfo);
     widget.onBallAdded();
   }
 
@@ -151,6 +139,21 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
   void _addBallFromEmoji(String emoji, String text, DateTime createdAt) {
     final color = _getColorFromEmoji(emoji);
     final size = 20.0;
+    
+    final newBallInfo = BallInfo(
+      createdAt: createdAt,
+      color: color,
+      radius: size,
+      x: 0.5, // 초기 위치를 중앙으로 설정
+      y: 0.1, // 초기 위치를 상단으로 설정
+    );
+    
+    setState(() {
+      _newBallInfos.add(newBallInfo);
+    });
+    _ballStorageService.saveNewBallInfos(_newBallInfos);
+    
+    // 실제 공 추가는 여기서만 수행
     _addBall(color, size, createdAt);
   }
 
@@ -420,9 +423,14 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
       x: ball.body.position.x / dateBoxWidth,
       y: ball.body.position.y / dateBoxHeight,
     )).toList();
-    await _ballStorageService.saveNewBallInfos(_newBallInfos); // 새 메서드 ���출
+    await _ballStorageService.saveNewBallInfos(_newBallInfos);
     widget.onClose(ballInfoList);
     Navigator.of(context).pop();
+  }
+
+  Future<void> _loadNewBallInfos() async {
+    _newBallInfos = await _ballStorageService.loadNewBallInfos();
+    setState(() {});
   }
 }
 
