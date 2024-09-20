@@ -17,19 +17,19 @@ class BallInfo {
   });
 
   Map<String, dynamic> toJson() => {
-    'createdAt': createdAt.toIso8601String(),
-    'color': color.value,
-    'radius': radius,
     'x': x,
     'y': y,
+    'radius': radius,
+    'color': color.value,
+    'createdAt': createdAt.toIso8601String(),
   };
 
   factory BallInfo.fromJson(Map<String, dynamic> json) => BallInfo(
+    x: json['x'],
+    y: json['y'],
+    radius: json['radius'],
+    color: Color(json['color']),
     createdAt: DateTime.parse(json['createdAt']),
-    color: Color(json['color'] as int),
-    radius: json['radius'] as double,
-    x: json['x'] as double,
-    y: json['y'] as double,
   );
 
   bool isCloseTo(double x, double y, {double tolerance = 0.1}) {

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import '../services/ball_storage_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsScreen extends StatelessWidget {
-  SettingsScreen({Key? key}) : super(key: key);
-
+  final Function onReset;
   final BallStorageService _ballStorageService = BallStorageService();
+
+  SettingsScreen({Key? key, required this.onReset}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +41,8 @@ class SettingsScreen extends StatelessWidget {
             TextButton(
               child: Text('초기화'),
               onPressed: () async {
-                await _ballStorageService.clearAllData();
+                await _resetAllData();
+                onReset(); // 모든 탭 초기화
                 Navigator.of(context).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('모든 데이터가 초기화되었습니다.')),
@@ -50,5 +53,25 @@ class SettingsScreen extends StatelessWidget {
         );
       },
     );
+  }
+
+  Future<void> _resetAllData() async {
+    // SharedPreferences의 모든 데이터 삭제
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+
+    // BallStorageService를 통한 모든 데이터 삭제
+    await _ballStorageService.clearAllData();
+
+    // 새로운 공 정보 삭제
+    await _ballStorageService.clearNewBallInfos();
+
+    // 기억 저장소 데이터 삭제
+    await _ballStorageService.clearAllMemos();
+
+    // 모든 공 데이터 삭제
+    await _ballStorageService.clearAllBalls();
+
+    // 여기에 추가적인 데이터 초기화 로직을 넣을 수 있습니다.
   }
 }

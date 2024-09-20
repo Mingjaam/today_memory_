@@ -9,10 +9,10 @@ class MemoryStorageScreen extends StatefulWidget {
   const MemoryStorageScreen({Key? key, required this.onMemoryUpdated}) : super(key: key);
 
   @override
-  _MemoryStorageScreenState createState() => _MemoryStorageScreenState();
+  MemoryStorageScreenState createState() => MemoryStorageScreenState();
 }
 
-class _MemoryStorageScreenState extends State<MemoryStorageScreen> {
+class MemoryStorageScreenState extends State<MemoryStorageScreen> {
   final BallStorageService _ballStorageService = BallStorageService();
   Map<DateTime, List<SharedMemo>> memos = {};
   Map<DateTime, List<BallInfo>> balls = {};
@@ -27,6 +27,11 @@ class _MemoryStorageScreenState extends State<MemoryStorageScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    // 여기서 _loadAllMemosAndBalls()를 제거합니다.
+  }
+
+  // 새로운 메서드 추가
+  void refreshData() {
     _loadAllMemosAndBalls();
   }
 
@@ -52,6 +57,11 @@ class _MemoryStorageScreenState extends State<MemoryStorageScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // 빌드 메서드 시작 시 데이터 새로고침
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      refreshData();
+    });
+
     if (isLoading) {
       return Center(child: CircularProgressIndicator());
     }
@@ -128,5 +138,11 @@ class _MemoryStorageScreenState extends State<MemoryStorageScreen> {
            a.hour == b.hour &&
            a.minute == b.minute &&
            a.second == b.second;
+  }
+
+  void resetState() {
+    memos.clear();
+    balls.clear();
+    
   }
 }

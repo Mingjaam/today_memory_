@@ -206,4 +206,47 @@ class BallStorageService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('new_ball_infos');
   }
+
+  Future<void> saveAllBallsPositions(List<BallInfo> balls) async {
+    final prefs = await SharedPreferences.getInstance();
+    final ballPositions = balls.map((ball) => {
+      'x': ball.x,
+      'y': ball.y,
+      'color': ball.color.value,
+      'radius': ball.radius,
+      'createdAt': ball.createdAt.toIso8601String(),
+    }).toList();
+    await prefs.setString('all_balls_positions', jsonEncode(ballPositions));
+  }
+
+  Future<List<BallInfo>> loadAllBallsPositions() async {
+    final prefs = await SharedPreferences.getInstance();
+    final positionsJson = prefs.getString('all_balls_positions');
+    if (positionsJson != null) {
+      final List<dynamic> positions = jsonDecode(positionsJson);
+      return positions.map((pos) => BallInfo(
+        createdAt: DateTime.parse(pos['createdAt']),
+        color: Color(pos['color']),
+        radius: pos['radius'],
+        x: pos['x'],
+        y: pos['y'],
+      )).toList();
+    }
+    return [];
+  }
+
+  Future<void> clearAllMemos() async {
+    final prefs = await SharedPreferences.getInstance();
+    final keys = prefs.getKeys();
+    for (final key in keys) {
+      if (key.startsWith('memos_')) {
+        await prefs.remove(key);
+      }
+    }
+  }
+
+  Future<void> clearAllBalls() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('all_balls_positions');
+  }
 }
