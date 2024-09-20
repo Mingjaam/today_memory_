@@ -234,8 +234,8 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
 
   bool _isFutureDate() {
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    return widget.selectedDate.isAfter(today);
+    final tomorrow = DateTime(now.year, now.month, now.day + 1);
+    return widget.selectedDate.isAtSameMomentAs(tomorrow) || widget.selectedDate.isAfter(tomorrow);
   }
 
   @override
@@ -420,7 +420,7 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
       x: ball.body.position.x / dateBoxWidth,
       y: ball.body.position.y / dateBoxHeight,
     )).toList();
-    await _ballStorageService.saveNewBallInfos(_newBallInfos); // 새 메서드 호출
+    await _ballStorageService.saveNewBallInfos(_newBallInfos); // 새 메서드 ���출
     widget.onClose(ballInfoList);
     Navigator.of(context).pop();
   }

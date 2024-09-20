@@ -49,23 +49,9 @@ class _FullCalendarState extends State<FullCalendar> with SingleTickerProviderSt
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _loadBallsForMonth(_focusedDay);
-  }
-
-  @override
   void dispose() {
     _animationController.dispose();
     super.dispose();
-  }
-
-  @override
-  void didUpdateWidget(FullCalendar oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.selectedDate != oldWidget.selectedDate) {
-      _loadBallsForMonth(widget.selectedDate ?? DateTime.now());
-    }
   }
 
   void _updatePhysics() {
@@ -80,33 +66,33 @@ class _FullCalendarState extends State<FullCalendar> with SingleTickerProviderSt
     
     final newBallsMap = await _ballStorageService.loadBallsForDateRange(startDate, endDate);
     
-    if (mounted) {
-      setState(() {
-        _ballsMap.addAll(newBallsMap);
-        _createPhysicsEngines();
-      });
-    }
+    setState(() {
+      _ballsMap = newBallsMap;
+      _createPhysicsEngines();
+    });
   }
 
   void _createPhysicsEngines() {
+    _physicsEngines.clear();
     final cellSize = Vector2(MediaQuery.of(context).size.width / 7, MediaQuery.of(context).size.height / 8);
     
-    for (var date in _ballsMap.keys) {
-      if (!_physicsEngines.containsKey(date)) {
-        final balls = _ballsMap[date] ?? [];
-        
-        final engine = PhysicsEngine(
-          gravity: Vector2(0, 30),
-          worldWidth: cellSize.x,
-          worldHeight: cellSize.y,
-        );
-        
-        for (var ball in balls) {
-          engine.addBall(ball, _ballRadiusRatio);
-        }
-        
-        _physicsEngines[date] = engine;
+    // 공이 있는 모든 날짜에 대해 PhysicsEngine 생성
+    Set<DateTime> datesWithContent = Set<DateTime>.from(_ballsMap.keys);
+    
+    for (var date in datesWithContent) {
+      final balls = _ballsMap[date] ?? [];
+      
+      final engine = PhysicsEngine(
+        gravity: Vector2(0, 30),
+        worldWidth: cellSize.x,
+        worldHeight: cellSize.y,
+      );
+      
+      for (var ball in balls) {
+        engine.addBall(ball, _ballRadiusRatio);
       }
+      
+      _physicsEngines[date] = engine;
     }
   }
 
@@ -120,7 +106,7 @@ class _FullCalendarState extends State<FullCalendar> with SingleTickerProviderSt
   Widget build(BuildContext context) {
     return Column(
       children: [
-        SizedBox(height: MediaQuery.of(context).size.height * 0.06), // 스크린 높이의 2% 여백 추가
+        SizedBox(height: MediaQuery.of(context).size.height * 0.08), // 스크린 높이의 2% 여백 추가
         Padding(
           padding: EdgeInsets.symmetric(
             horizontal: 16.0
@@ -153,12 +139,12 @@ class _FullCalendarState extends State<FullCalendar> with SingleTickerProviderSt
           },
 
           onPageChanged: (focusedDay) {
-            _focusedDay = focusedDay;
-            _loadBallsForMonth(focusedDay).then((_) {
-              if (mounted) {
-                setState(() {});
-              }
+            setState(() {
+              _focusedDay = focusedDay;
             });
+            _updateCalendar();
+            _createPhysicsEngines();
+            _updatePhysics();
           },
           
           calendarStyle: CalendarStyle(
@@ -294,6 +280,14 @@ class _FullCalendarState extends State<FullCalendar> with SingleTickerProviderSt
         );
       },
     );
+  }
+
+  @override
+  void didUpdateWidget(FullCalendar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.selectedDate != oldWidget.selectedDate) {
+      _loadBallsForMonth(widget.selectedDate ?? DateTime.now());
+    }
   }
 }
 
