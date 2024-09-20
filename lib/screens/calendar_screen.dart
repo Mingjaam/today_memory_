@@ -92,11 +92,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.storage),
-            label: '기억저장소',
+            label: '기억 리스트',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.bubble_chart),
-            label: '모든 공',
+            label: '기억저장소',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),

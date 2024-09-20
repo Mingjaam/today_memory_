@@ -49,9 +49,23 @@ class _FullCalendarState extends State<FullCalendar> with SingleTickerProviderSt
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadBallsForMonth(_focusedDay);
+  }
+
+  @override
   void dispose() {
     _animationController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(FullCalendar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.selectedDate != oldWidget.selectedDate) {
+      _loadBallsForMonth(widget.selectedDate ?? DateTime.now());
+    }
   }
 
   void _updatePhysics() {
@@ -66,33 +80,33 @@ class _FullCalendarState extends State<FullCalendar> with SingleTickerProviderSt
     
     final newBallsMap = await _ballStorageService.loadBallsForDateRange(startDate, endDate);
     
-    setState(() {
-      _ballsMap = newBallsMap;
-      _createPhysicsEngines();
-    });
+    if (mounted) {
+      setState(() {
+        _ballsMap.addAll(newBallsMap);
+        _createPhysicsEngines();
+      });
+    }
   }
 
   void _createPhysicsEngines() {
-    _physicsEngines.clear();
     final cellSize = Vector2(MediaQuery.of(context).size.width / 7, MediaQuery.of(context).size.height / 8);
     
-    // 공이 있는 모든 날짜에 대해 PhysicsEngine 생성
-    Set<DateTime> datesWithContent = Set<DateTime>.from(_ballsMap.keys);
-    
-    for (var date in datesWithContent) {
-      final balls = _ballsMap[date] ?? [];
-      
-      final engine = PhysicsEngine(
-        gravity: Vector2(0, 30),
-        worldWidth: cellSize.x,
-        worldHeight: cellSize.y,
-      );
-      
-      for (var ball in balls) {
-        engine.addBall(ball, _ballRadiusRatio);
+    for (var date in _ballsMap.keys) {
+      if (!_physicsEngines.containsKey(date)) {
+        final balls = _ballsMap[date] ?? [];
+        
+        final engine = PhysicsEngine(
+          gravity: Vector2(0, 30),
+          worldWidth: cellSize.x,
+          worldHeight: cellSize.y,
+        );
+        
+        for (var ball in balls) {
+          engine.addBall(ball, _ballRadiusRatio);
+        }
+        
+        _physicsEngines[date] = engine;
       }
-      
-      _physicsEngines[date] = engine;
     }
   }
 
@@ -139,11 +153,12 @@ class _FullCalendarState extends State<FullCalendar> with SingleTickerProviderSt
           },
 
           onPageChanged: (focusedDay) {
-            setState(() {
-              _focusedDay = focusedDay;
+            _focusedDay = focusedDay;
+            _loadBallsForMonth(focusedDay).then((_) {
+              if (mounted) {
+                setState(() {});
+              }
             });
-            _loadBallsForMonth(focusedDay);
-            _loadBallsForMonth(DateTime(focusedDay.year, focusedDay.month + 1, 1));
           },
           
           calendarStyle: CalendarStyle(
@@ -279,14 +294,6 @@ class _FullCalendarState extends State<FullCalendar> with SingleTickerProviderSt
         );
       },
     );
-  }
-
-  @override
-  void didUpdateWidget(FullCalendar oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.selectedDate != oldWidget.selectedDate) {
-      _loadBallsForMonth(widget.selectedDate ?? DateTime.now());
-    }
   }
 }
 

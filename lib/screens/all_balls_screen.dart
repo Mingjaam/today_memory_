@@ -25,7 +25,7 @@ class AllBallsScreenState extends State<AllBallsScreen> with SingleTickerProvide
   static const double WALL_DENSITY = 1.5;  // 벽 밀도
   static const double WALL_FRICTION = 0.3;  // 벽 마찰
   static const double WALL_RESTITUTION = 0.3;  // 벽 반발력
-  static const double BOTTOM_WALL_HEIGHT_RATIO = 0.25;  // 하단 벽 높이 비율
+  static const double BOTTOM_WALL_HEIGHT_RATIO = 0.27;  // 하단 벽 높이 비율
 
   final BallStorageService _ballStorageService = BallStorageService();
   List<BallInfo> _newBallInfos = [];
@@ -170,7 +170,7 @@ class AllBallsScreenState extends State<AllBallsScreen> with SingleTickerProvide
         return true;
       },
       child: Scaffold(
-        appBar: AppBar(title: Text('모든 공')),
+        appBar: AppBar(title: Text('기억 저장 공간')),
         body: Column(
           children: [
             Padding(
@@ -178,9 +178,9 @@ class AllBallsScreenState extends State<AllBallsScreen> with SingleTickerProvide
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  Text('전체 공: $_totalBallCount'),
-                  Text('생성된 공: ${_balls.length}'),
-                  Text('남은 공: ${_newBallInfos.length - _newBallIndex}'),
+                  Text('전체 기억: $_totalBallCount'),
+                  Text('저장 기억: ${_balls.length}'),
+                  Text('남은 기억: ${_newBallInfos.length - _newBallIndex}'),
                 ],
               ),
             ),
