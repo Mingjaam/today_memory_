@@ -25,7 +25,7 @@ class AllBallsScreenState extends State<AllBallsScreen> with SingleTickerProvide
   static const double WALL_DENSITY = 1.5;  // 벽 밀도
   static const double WALL_FRICTION = 0.3;  // 벽 마찰
   static const double WALL_RESTITUTION = 0.3;  // 벽 반발력
-  static const double BOTTOM_WALL_HEIGHT_RATIO = 0.1;  // 하단 벽 높이 비율
+  static const double BOTTOM_WALL_HEIGHT_RATIO = 0.25;  // 하단 벽 높이 비율
 
   final BallStorageService _ballStorageService = BallStorageService();
   List<BallInfo> _newBallInfos = [];

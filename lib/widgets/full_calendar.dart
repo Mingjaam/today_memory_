@@ -106,8 +106,11 @@ class _FullCalendarState extends State<FullCalendar> with SingleTickerProviderSt
   Widget build(BuildContext context) {
     return Column(
       children: [
+        SizedBox(height: MediaQuery.of(context).size.height * 0.06), // 스크린 높이의 2% 여백 추가
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0), // 상하 패딩을 줄임
+          padding: EdgeInsets.symmetric(
+            horizontal: 16.0
+          ),
           child: Text(
             "${_focusedDay.year}년, ${_focusedDay.month}월의 기억들..",
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
