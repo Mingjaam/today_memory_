@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:forge2d/forge2d.dart';
 
 class BallInfo {
-  final DateTime createdAt;  // id 대신 생성 시간 사용
+  final DateTime createdAt;
   Color color;
   double radius;
   double x;
@@ -34,6 +34,16 @@ class BallInfo {
 
   bool isCloseTo(double x, double y, {double tolerance = 0.1}) {
     return (this.x - x).abs() < tolerance && (this.y - y).abs() < tolerance;
+  }
+
+  BallInfo copyWith() {
+    return BallInfo(
+      createdAt: createdAt,
+      color: color,
+      radius: radius,
+      x: x,
+      y: y,
+    );
   }
 }
 

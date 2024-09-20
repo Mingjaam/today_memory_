@@ -38,14 +38,8 @@ class BallStorageService {
   }
 
   Future<void> clearAllData() async {
-    // 모든 데이터를 지우는 로직 구현
-    // 예: SharedPreferences를 사용하는 경우
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
-  }
-
-  String _getEmojiKey(DateTime date) {
-    return 'emojis_${date.year}_${date.month}_${date.day}';
   }
 
   String _getMemoKey(DateTime date) {
@@ -184,5 +178,32 @@ class BallStorageService {
       MapEntry(key, [value.x, value.y])
     ));
     await prefs.setString(_getBallPositionsKey(), positionsJson);
+  }
+
+  Future<void> addBall(DateTime date, BallInfo ballInfo) async {
+    final balls = await loadBalls(date);
+    balls.add(ballInfo);
+    await saveBalls(date, balls);
+  }
+
+  Future<void> saveNewBallInfos(List<BallInfo> newBallInfos) async {
+    final prefs = await SharedPreferences.getInstance();
+    final newBallInfosJson = newBallInfos.map((info) => info.toJson()).toList();
+    await prefs.setString('new_ball_infos', jsonEncode(newBallInfosJson));
+  }
+
+  Future<List<BallInfo>> loadNewBallInfos() async {
+    final prefs = await SharedPreferences.getInstance();
+    final newBallInfosJson = prefs.getString('new_ball_infos');
+    if (newBallInfosJson != null) {
+      final List<dynamic> decodedList = jsonDecode(newBallInfosJson);
+      return decodedList.map((json) => BallInfo.fromJson(json)).toList();
+    }
+    return [];
+  }
+
+  Future<void> clearNewBallInfos() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('new_ball_infos');
   }
 }

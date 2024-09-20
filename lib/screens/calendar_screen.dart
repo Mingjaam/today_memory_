@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/full_calendar.dart';
 import 'expanded_calendar_screen.dart';
-import '../services/ball_storage_service.dart';
 import '../screens/memory_storage_screen.dart';
 import '../screens/all_balls_screen.dart';
 import '../screens/settings_screen.dart';
@@ -12,43 +11,11 @@ class CalendarScreen extends StatefulWidget {
 }
 
 class _CalendarScreenState extends State<CalendarScreen> {
-  final BallStorageService _ballStorageService = BallStorageService();
   int _selectedIndex = 0;
   Key _calendarKey = UniqueKey();
   Key _memoryStorageKey = UniqueKey();
-  final GlobalKey<AllBallsScreenState> _allBallsKey = GlobalKey<AllBallsScreenState>();
+  Key _allBallsKey = UniqueKey();
   Key _settingsKey = UniqueKey();
-
-  void _resetAllData() async {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('전체 초기화'),
-          content: Text('모든 데이터를 초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다.'),
-          actions: <Widget>[
-            TextButton(
-              child: Text('취소'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: Text('초기화'),
-              onPressed: () async {
-                await _ballStorageService.clearAllData();
-                Navigator.of(context).pop();
-                _onMemoryUpdated();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('모든 데이터가 초기화되었습니다.')),
-                );
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
 
   void _onMemoryUpdated() {
     setState(() {
@@ -71,7 +38,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   builder: (context) => ExpandedCalendarScreen(selectedDate: selectedDay),
                 ),
               ).then((_) {
-                setState(() {});
+                setState(() {
+                  _calendarKey = UniqueKey();
+                });
               });
             },
           ),
@@ -106,20 +75,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
         selectedItemColor: Colors.blue,
         unselectedItemColor: Colors.grey,
         onTap: (index) {
-          if (_selectedIndex == 2) {
-            // 모든 공 화면에서 다른 탭으로 이동할 때 공의 위치 저장
-            _allBallsKey.currentState?.saveBallPositions();
-          }
           setState(() {
             _selectedIndex = index;
             if (index == 0) {
               _calendarKey = UniqueKey();
             } else if (index == 1) {
               _memoryStorageKey = UniqueKey();
+            } else if (index == 2) {
+              _allBallsKey = UniqueKey();
             } else if (index == 3) {
               _settingsKey = UniqueKey();
             }
-            // AllBallsScreen의 키는 변경하지 않습니다.
           });
         },
         type: BottomNavigationBarType.fixed,

@@ -235,10 +235,11 @@ class _FullCalendarState extends State<FullCalendar> with SingleTickerProviderSt
               _loadBallsForMonth(_focusedDay);
               setState(() {});
             },
-            onBallsChanged: () {
+            onBallAdded: () {
               _loadBallsForMonth(_focusedDay);
               setState(() {});
             },
+            // onBallsChanged 매개변수 제거
             onMemoAdded: (SharedMemo memo) {
               _loadBallsForMonth(_focusedDay);
               setState(() {});

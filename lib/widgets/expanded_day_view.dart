@@ -10,16 +10,16 @@ import '../services/ball_storage_service.dart';
 class ExpandedDayView extends StatefulWidget {
   final DateTime selectedDate;
   final Function(List<BallInfo>) onClose;
-  final VoidCallback onBallsChanged;
   final Function(SharedMemo) onMemoAdded;
   final Function(SharedMemo) onMemoDeleted;
+  final Function() onBallAdded;
 
   ExpandedDayView({
     required this.selectedDate,
     required this.onClose,
-    required this.onBallsChanged,
     required this.onMemoAdded,
     required this.onMemoDeleted,
+    required this.onBallAdded,
   });
 
   @override
@@ -32,7 +32,6 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
   List<Ball> balls = [];
   late AnimationController _controller;
   
-  // 날짜 표시 박스의 크기
   late double dateBoxWidth;
   late double dateBoxHeight;
 
@@ -40,8 +39,9 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
 
   bool _needsSave = false;
   int _frameCount = 0;
-  static const int SAVE_INTERVAL = 60; // 60프레임마다 저장 (약 1초)
+  static const int SAVE_INTERVAL = 60;
   List<SharedMemo> sharedMemos = [];
+  List<BallInfo> _newBallInfos = []; // 새로 추가된 공 정보를 저장할 리스트
 
   @override
   void initState() {
@@ -63,7 +63,6 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
     super.dispose();
   }
 
-  // 물리 시뮬레이션 업데트
   void _updatePhysics() {
     world.stepDt(1 / 60);
     setState(() {});
@@ -76,17 +75,14 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
     }
   }
 
-
-  // 공 추가
   void _addBall(Color color, double size, DateTime createdAt) {
-    print('공 생성: createdAt = $createdAt'); // 디버그 출력 추가
     final random = math.Random();
     final ball = Ball(
       createdAt: createdAt,
       world,
       position: Vector2(
         random.nextDouble() * dateBoxWidth,
-        size // 공이 시작하는 높이를 공의 크기로 설정
+        size
       ),
       radius: size,
       restitution: 0.8,
@@ -96,27 +92,35 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
       balls.add(ball);
     });
     _needsSave = true;
-    widget.onBallsChanged(); // 콜백 호출
+    
+    final newBallInfo = BallInfo(
+      createdAt: createdAt,
+      color: color,
+      radius: size,
+      x: ball.body.position.x / dateBoxWidth,
+      y: ball.body.position.y / dateBoxHeight,
+    );
+    
+    setState(() {
+      _newBallInfos.add(newBallInfo); // 새 공 정보를 리스트에 추가
+    });
+
+    _ballStorageService.addBall(widget.selectedDate, newBallInfo);
+    widget.onBallAdded();
   }
 
-  // 벽 추가 (공 움직임을 제한하기 위함)
   void _addWalls() {
-    // 바닥
     _addWall(Vector2(0, dateBoxHeight), Vector2(dateBoxWidth, dateBoxHeight));
-    // 왼쪽 벽
     _addWall(Vector2(0, 0), Vector2(0, dateBoxHeight));
-    // 오른쪽 벽
     _addWall(Vector2(dateBoxWidth, 0), Vector2(dateBoxWidth, dateBoxHeight));
   }
 
-  // 개별 벽 추가
   void _addWall(Vector2 start, Vector2 end) {
     final wall = world.createBody(BodyDef()..type = BodyType.static);
     final shape = EdgeShape()..set(start, end);
     wall.createFixture(FixtureDef(shape)..friction = 0.3);
   }
 
-  // 공 정보 저장
   Future<void> _saveBalls() async {
     final ballInfoList = balls.map((ball) => BallInfo(
       createdAt: ball.createdAt,
@@ -128,7 +132,6 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
     await _ballStorageService.saveBalls(widget.selectedDate, ballInfoList);
   }
 
-  // 공 정보 불러오기
   Future<void> _loadBalls() async {
     final ballInfoList = await _ballStorageService.loadBalls(widget.selectedDate);
     if (ballInfoList.isNotEmpty) {
@@ -146,7 +149,6 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
   }
 
   void _addBallFromEmoji(String emoji, String text, DateTime createdAt) {
-    print('이모지로부터 공 생성: createdAt = $createdAt'); // 디버그 출력 추가
     final color = _getColorFromEmoji(emoji);
     final size = 20.0;
     _addBall(color, size, createdAt);
@@ -154,19 +156,19 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
 
   Color _getColorFromEmoji(String emoji) {
     switch (emoji) {
-      case '😊': return Colors.orange[300]!; // 밝은 주황색
-      case '😃': return Colors.yellow[400]!; // 선명한 노란색
-      case '😍': return Colors.pink[300]!; // 밝은 분홍색
-      case '🥳': return Colors.purple[300]!; // 밝은 보라색
-      case '😎': return Colors.blue[400]!; // 선명한 파란색
-      case '🤔': return Colors.teal[300]!; // 밝은 청록색
-      case '😢': return Colors.lightBlue[300]!; // 밝은 하늘색
-      case '😡': return Colors.red[400]!; // 선명한 빨간색
-      case '😴': return Colors.indigo[300]!; // 밝은 남색
-      case '😌': return Colors.green[400]!; // 선명한 초록색
-      case '🥰': return Colors.deepOrange[300]!; // 밝은 진한 주황색
-      case '😂': return Colors.cyan[400]!; // 선명한 청록색
-      default: return Colors.grey[400]!; // 기본값: 중간 회색
+      case '😊': return Colors.orange[300]!;
+      case '😃': return Colors.yellow[400]!;
+      case '😍': return Colors.pink[300]!;
+      case '🥳': return Colors.purple[300]!;
+      case '😎': return Colors.blue[400]!;
+      case '🤔': return Colors.teal[300]!;
+      case '😢': return Colors.lightBlue[300]!;
+      case '😡': return Colors.red[400]!;
+      case '😴': return Colors.indigo[300]!;
+      case '😌': return Colors.green[400]!;
+      case '🥰': return Colors.deepOrange[300]!;
+      case '😂': return Colors.cyan[400]!;
+      default: return Colors.grey[400]!;
     }
   }
 
@@ -179,7 +181,6 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
 
   Future<void> _saveMemos() async {
     await _ballStorageService.saveMemos(widget.selectedDate, sharedMemos);
-    print('Saved ${sharedMemos.length} memos for ${widget.selectedDate}');  // 디버깅용 출력
   }
 
   void _addMemo(String emoji, String text) {
@@ -191,7 +192,6 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
       DateTime.now().minute,
       DateTime.now().second,
     );
-    print('메모 생성: createdAt = $createdAt');
     final newMemo = SharedMemo(
       text: text,
       emoji: emoji,
@@ -208,16 +208,12 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
 
   void _deleteMemoAndBall(int index) {
     final deletedMemo = sharedMemos[index];
-    print('메모 삭제: createdAt = ${deletedMemo.createdAt}');
     setState(() {
       sharedMemos.removeAt(index);
       _saveMemos();
       
       balls.removeWhere((ball) {
         final isMatched = _isSameDateTime(ball.createdAt, deletedMemo.createdAt);
-        if (isMatched) {
-          print('공 삭제: createdAt = ${ball.createdAt}');
-        }
         return isMatched;
       });
       _needsSave = true;
@@ -258,7 +254,6 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
         insetPadding: EdgeInsets.all(16),
         child: GestureDetector(
           onTap: () {
-            // 화면의 다른 부분을 터치하면 키보드를 닫습니다.
             FocusScope.of(context).unfocus();
           },
           child: Scaffold(
@@ -350,7 +345,6 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
                                     trailing: IconButton(
                                       icon: Icon(Icons.delete, color: Colors.red),
                                       onPressed: () {
-                                        // 삭제 확인 대화 상자 표시
                                         showDialog(
                                           context: context,
                                           builder: (BuildContext context) {
@@ -361,14 +355,14 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
                                                 TextButton(
                                                   child: Text('취소'),
                                                   onPressed: () {
-                                                    Navigator.of(context).pop(); // 대화 상자 닫기
+                                                    Navigator.of(context).pop();
                                                   },
                                                 ),
                                                 TextButton(
                                                   child: Text('삭제'),
                                                   onPressed: () {
-                                                    _deleteMemoAndBall(index); // 메모와 볼 삭제
-                                                    Navigator.of(context).pop(); // 대화 상자 닫기
+                                                    _deleteMemoAndBall(index);
+                                                    Navigator.of(context).pop();
                                                   },
                                                 ),
                                               ],
@@ -378,8 +372,8 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
                                       },
                                     ),
                                   ),
-                                  if (index < sharedMemos.length - 1) // 마지막 항목이 아닐 때만 선 추가
-                                    Divider(), // 메모 사이에 선 추가
+                                  if (index < sharedMemos.length - 1)
+                                    Divider(),
                                 ],
                               );
                             },
@@ -397,8 +391,8 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
 
   Widget _buildFriendCircle(Friend friend) {
     return GestureDetector(
-      onTapDown: (details) => _addBall(friend.color, 20, DateTime.now()),  // 일반 탭
-      onLongPress: () => _addBall(friend.color, 20, DateTime.now()),  // 길게 누르기
+      onTapDown: (details) => _addBall(friend.color, 20, DateTime.now()),
+      onLongPress: () => _addBall(friend.color, 20, DateTime.now()),
       child: Column(
         children: [
           Container(
@@ -426,8 +420,8 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
       x: ball.body.position.x / dateBoxWidth,
       y: ball.body.position.y / dateBoxHeight,
     )).toList();
+    await _ballStorageService.saveNewBallInfos(_newBallInfos); // 새 메서드 호출
     widget.onClose(ballInfoList);
-    widget.onBallsChanged(); // 공 정보가 변경되었음을 알림
     Navigator.of(context).pop();
   }
 }
