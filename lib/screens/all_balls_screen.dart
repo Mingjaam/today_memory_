@@ -4,7 +4,6 @@ import '../models/ball_info.dart';
 import '../services/ball_storage_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'package:flutter/scheduler.dart';
 import 'dart:math';
 
 class AllBallsScreen extends StatefulWidget {
@@ -68,14 +67,14 @@ class AllBallsScreenState extends State<AllBallsScreen> with SingleTickerProvide
     print("공 불러오는 중..."); // 디버깅용 로그
     _clearBalls(); // 기존 공들 모두 제거
     await _loadSavedBalls();
-    await _loadNewBallInfos(); // 새로운 공 정보 다시 로드
+    await _loadNewBallInfos();
+    _updateTotalBallCount();
   }
 
   Future<void> saveBalls() async {
     print("공 저장 중..."); // 디버깅용 로그
     await _saveBalls();
-    _clearBalls(); // 공 저장 후 모두 제거
-    await _ballStorageService.saveNewBallInfos(_newBallInfos.sublist(_newBallIndex)); // 남은 새 공 정보 저장
+    await _ballStorageService.saveNewBallInfos(_newBallInfos.sublist(_newBallIndex));
   }
 
   void _initializePhysics() {
@@ -84,23 +83,13 @@ class AllBallsScreenState extends State<AllBallsScreen> with SingleTickerProvide
   }
 
   Future<void> _loadSavedBalls() async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedBallsJson = prefs.getString('all_balls');
-    print("불러온 공 데이터: $savedBallsJson"); // 디버깅용 로그
-    if (savedBallsJson != null) {
-      final savedBalls = (jsonDecode(savedBallsJson) as List)
-          .map((ballJson) => BallInfo.fromJson(ballJson))
-          .toList();
-      setState(() {
-        for (var ballInfo in savedBalls) {
-          final ball = Ball(_world, Vector2(ballInfo.x, ballInfo.y), ballInfo.radius, ballInfo.color);
-          ball.body.setTransform(Vector2(ballInfo.x, ballInfo.y), 0);
-          ball.body.linearVelocity.setZero();
-          _balls.add(ball);
-        }
-        _totalBallCount = _balls.length;
-      });
-    }
+    final savedBalls = await _ballStorageService.loadAllBallsPositions();
+    setState(() {
+      for (var ballInfo in savedBalls) {
+        final ball = Ball(_world, Vector2(ballInfo.x, ballInfo.y), ballInfo.radius, ballInfo.color);
+        _balls.add(ball);
+      }
+    });
   }
 
   Future<void> _loadNewBallInfos() async {
@@ -116,7 +105,6 @@ class AllBallsScreenState extends State<AllBallsScreen> with SingleTickerProvide
   }
 
   Future<void> _saveBalls() async {
-    final prefs = await SharedPreferences.getInstance();
     final ballInfos = _balls.map((ball) => BallInfo(
       x: ball.body.position.x,
       y: ball.body.position.y,
@@ -124,9 +112,7 @@ class AllBallsScreenState extends State<AllBallsScreen> with SingleTickerProvide
       color: ball.color,
       createdAt: ball.createdAt,
     )).toList();
-    final ballInfosJson = jsonEncode(ballInfos.map((b) => b.toJson()).toList());
-    print("저장된 공 데이터: $ballInfosJson"); // 디버깅용 로그
-    await prefs.setString('all_balls', ballInfosJson);
+    await _ballStorageService.saveAllBallsPositions(ballInfos);
   }
 
   void _clearBalls() {
@@ -137,6 +123,11 @@ class AllBallsScreenState extends State<AllBallsScreen> with SingleTickerProvide
       _balls.clear();
       _totalBallCount = 0;
     });
+  }
+
+  void _updateTotalBallCount() {
+    _totalBallCount = _balls.length + (_newBallInfos.length - _newBallIndex);
+    setState(() {});
   }
 
   @override
@@ -151,6 +142,8 @@ class AllBallsScreenState extends State<AllBallsScreen> with SingleTickerProvide
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
       _saveBalls();
+    } else if (state == AppLifecycleState.resumed) {
+      loadBalls();
     }
   }
 
@@ -257,10 +250,9 @@ class AllBallsScreenState extends State<AllBallsScreen> with SingleTickerProvide
   }
 
   void resetState() {
-    setState(() {
-      // 여기에 초기화 로직을 추가하세요
-      // 예: _balls = [];
-    });
+    _clearBalls();
+    _newBallIndex = 0;
+    _updateTotalBallCount();
   }
 }
 
