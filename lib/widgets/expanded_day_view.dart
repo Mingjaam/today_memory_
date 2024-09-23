@@ -203,21 +203,18 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
     _addBallFromEmoji(emoji, text, createdAt);
   }
 
-  void _deleteMemoAndBall(int index) {
+  Future<void> _deleteMemoAndBall(int index) async {
     final deletedMemo = sharedMemos[index];
+    await _ballStorageService.deleteMemoAndBallEverywhere(widget.selectedDate, deletedMemo);
+    
     setState(() {
       sharedMemos.removeAt(index);
-      _saveMemos();
-      
-      balls.removeWhere((ball) {
-        final isMatched = _isSameDateTime(ball.createdAt, deletedMemo.createdAt);
-        return isMatched;
-      });
-      _needsSave = true;
-      widget.onMemoDeleted(deletedMemo);
+      balls.removeWhere((ball) => _isSameDateTime(ball.createdAt, deletedMemo.createdAt));
     });
     
-    _saveBalls();
+    widget.onMemoDeleted(deletedMemo);
+    await _loadBalls();  // 공 목록을 다시 로드합니다.
+    await _loadNewBallInfos();  // 새 공 정보를 다시 로드합니다.
   }
 
   bool _isSameDateTime(DateTime a, DateTime b) {

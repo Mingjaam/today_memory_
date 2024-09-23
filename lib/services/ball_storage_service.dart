@@ -249,4 +249,24 @@ class BallStorageService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('all_balls_positions');
   }
+
+  Future<void> deleteMemoAndBallEverywhere(DateTime date, SharedMemo memo) async {
+    // 메모 삭제
+    await deleteMemo(date, memo);
+
+    // 해당 날짜의 공 삭제
+    final balls = await loadBalls(date);
+    balls.removeWhere((ball) => _isSameDateTime(ball.createdAt, memo.createdAt));
+    await saveBalls(date, balls);
+
+    // 모든 공 목록에서 삭제
+    final allBalls = await loadAllBallsPositions();
+    allBalls.removeWhere((ball) => _isSameDateTime(ball.createdAt, memo.createdAt));
+    await saveAllBallsPositions(allBalls);
+
+    // 새로운 공 목록에서 삭제
+    final newBallInfos = await loadNewBallInfos();
+    newBallInfos.removeWhere((ball) => _isSameDateTime(ball.createdAt, memo.createdAt));
+    await saveNewBallInfos(newBallInfos);
+  }
 }

@@ -86,7 +86,7 @@ class AllBallsScreenState extends State<AllBallsScreen> with SingleTickerProvide
     final savedBalls = await _ballStorageService.loadAllBallsPositions();
     setState(() {
       for (var ballInfo in savedBalls) {
-        final ball = Ball(_world, Vector2(ballInfo.x, ballInfo.y), ballInfo.radius, ballInfo.color);
+        final ball = Ball(_world, Vector2(ballInfo.x, ballInfo.y), ballInfo.radius, ballInfo.color, ballInfo.createdAt);
         _balls.add(ball);
       }
     });
@@ -128,6 +128,10 @@ class AllBallsScreenState extends State<AllBallsScreen> with SingleTickerProvide
   void _updateTotalBallCount() {
     _totalBallCount = _balls.length + (_newBallInfos.length - _newBallIndex);
     setState(() {});
+  }
+
+  Future<void> reloadBalls() async {
+    await loadBalls();
   }
 
   @override
@@ -236,7 +240,7 @@ class AllBallsScreenState extends State<AllBallsScreen> with SingleTickerProvide
         screenSize.height * 0.1  // 상단에서 화면 높이의 10% 위치
       );
 
-      final ball = Ball(_world, position, ALL_BALLS_SCREEN_BALL_RADIUS, newBallInfo.color);
+      final ball = Ball(_world, position, ALL_BALLS_SCREEN_BALL_RADIUS, newBallInfo.color, newBallInfo.createdAt);
       setState(() {
         _balls.add(ball);
         _newBallIndex++;
@@ -262,9 +266,8 @@ class Ball {
   final double radius;
   final DateTime createdAt;
 
-  Ball(World world, Vector2 position, this.radius, this.color)
-      : createdAt = DateTime.now(),
-        body = world.createBody(BodyDef()
+  Ball(World world, Vector2 position, this.radius, this.color, this.createdAt)
+      : body = world.createBody(BodyDef()
           ..type = BodyType.dynamic
           ..position = position) {
     final shape = CircleShape()..radius = radius;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import '../utils/emiji_picker.dart';
 
 class MemoWidget extends StatefulWidget {
@@ -14,6 +15,7 @@ class MemoWidget extends StatefulWidget {
 class _MemoWidgetState extends State<MemoWidget> {
   String selectedEmoji = '😊';
   TextEditingController _textController = TextEditingController();
+  bool _isButtonDisabled = false;
 
   void _openEmojiPicker() {
     showDialog(
@@ -28,6 +30,21 @@ class _MemoWidgetState extends State<MemoWidget> {
         );
       },
     );
+  }
+
+  void _shareMemo() {
+    if (!_isButtonDisabled && _textController.text.trim().isNotEmpty) {
+      widget.onShare(selectedEmoji, _textController.text);
+      _textController.clear();
+      setState(() {
+        _isButtonDisabled = true;
+      });
+      Timer(Duration(seconds: 1), () {
+        setState(() {
+          _isButtonDisabled = false;
+        });
+      });
+    }
   }
 
   @override
@@ -54,12 +71,9 @@ class _MemoWidgetState extends State<MemoWidget> {
             Spacer(),
             IconButton(
               icon: Icon(Icons.send),
-              onPressed: _textController.text.trim().isEmpty
-                  ? null  // 텍스트가 비어있으면 버튼 비활성화
-                  : () {
-                      widget.onShare(selectedEmoji, _textController.text);
-                      _textController.clear();
-                    },
+              onPressed: (_isButtonDisabled || _textController.text.trim().isEmpty)
+                  ? null  // 텍스트가 비어있거나 버튼이 비활성화되면 null 반환
+                  : _shareMemo,
               tooltip: '저장하기',
             ),
           ],

@@ -23,6 +23,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     setState(() {
       _memoryStorageKey = UniqueKey();
     });
+    _allBallsScreenKey.currentState?.reloadBalls();
   }
 
   void resetAllTabs() {

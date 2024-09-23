@@ -42,7 +42,7 @@ class MemoryStorageScreenState extends State<MemoryStorageScreen> {
   }
 
   Future<void> _deleteMemoAndBall(DateTime date, SharedMemo memo) async {
-    await _ballStorageService.deleteMemoAndBall(date, memo);
+    await _ballStorageService.deleteMemoAndBallEverywhere(date, memo);
     await _loadAllMemosAndBalls();
     widget.onMemoryUpdated();
   }
