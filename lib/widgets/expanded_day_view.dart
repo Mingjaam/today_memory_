@@ -2,7 +2,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:forge2d/forge2d.dart';
 import 'memo_widget.dart';
-import '../models/friend.dart';
 import '../models/ball_info.dart';
 import '../models/stored_memo.dart';
 import '../services/ball_storage_service.dart';
@@ -27,7 +26,6 @@ class ExpandedDayView extends StatefulWidget {
 }
 
 class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProviderStateMixin {
-  List<Friend> friends = [];
   late World world;
   List<Ball> balls = [];
   late AnimationController _controller;
@@ -159,19 +157,15 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
 
   Color _getColorFromEmoji(String emoji) {
     switch (emoji) {
-      case '😊': return Colors.orange[300]!;
-      case '😃': return Colors.yellow[400]!;
-      case '😍': return Colors.pink[300]!;
-      case '🥳': return Colors.purple[300]!;
-      case '😎': return Colors.blue[400]!;
-      case '🤔': return Colors.teal[300]!;
-      case '😢': return Colors.lightBlue[300]!;
-      case '😡': return Colors.red[400]!;
-      case '😴': return Colors.indigo[300]!;
-      case '😌': return Colors.green[400]!;
-      case '🥰': return Colors.deepOrange[300]!;
-      case '😂': return Colors.cyan[400]!;
-      default: return Colors.grey[400]!;
+      case '😡': return Colors.red;
+      case '😊': return const Color(0xFFFFD700);
+      case '😎': return const Color(0xFFFFD700);
+      case '😢': return Colors.blue;
+      case '😴': return Colors.green;
+      case '😐': return Colors.green;
+      case '🥰': return const Color.fromARGB(255, 255, 134, 231);
+      case '🤔': return Colors.purple;
+      default: return Colors.grey;
     }
   }
 
@@ -340,44 +334,52 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
                             itemCount: sharedMemos.length,
                             itemBuilder: (context, index) {
                               final memo = sharedMemos[index];
-                              return Column(
-                                children: [
-                                  ListTile(
-                                    leading: Text(memo.emoji, style: TextStyle(fontSize: 24)),
-                                    title: Text(memo.text),
-                                    trailing: IconButton(
-                                      icon: Icon(Icons.delete, color: Colors.red),
-                                      onPressed: () {
-                                        showDialog(
-                                          context: context,
-                                          builder: (BuildContext context) {
-                                            return AlertDialog(
-                                              title: Text('삭제'),
-                                              content: Text('이 기억을 삭제 하시겠습니까? \n당신의 머리속에서 사라지진 않습니다.'),
-                                              actions: <Widget>[
-                                                TextButton(
-                                                  child: Text('취소'),
-                                                  onPressed: () {
-                                                    Navigator.of(context).pop();
-                                                  },
-                                                ),
-                                                TextButton(
-                                                  child: Text('삭제'),
-                                                  onPressed: () {
-                                                    _deleteMemoAndBall(index);
-                                                    Navigator.of(context).pop();
-                                                  },
-                                                ),
-                                              ],
-                                            );
-                                          },
-                                        );
-                                      },
-                                    ),
+                              return Dismissible(
+                                key: Key(memo.createdAt.toString()),
+                                direction: DismissDirection.endToStart,
+                                background: Container(
+                                  color: Colors.red,
+                                  alignment: Alignment.centerRight,
+                                  padding: EdgeInsets.symmetric(horizontal: 20),
+                                  child: Icon(Icons.delete, color: Colors.white),
+                                ),
+                                confirmDismiss: (direction) async {
+                                  return await showDialog(
+                                    context: context,
+                                    builder: (BuildContext context) {
+                                      return AlertDialog(
+                                        backgroundColor: Colors.white,
+                                        title: Text('삭제'),
+                                        content: Text('이 기억을 삭제 하시겠습니까? \n당신의 머리속에서 사라지진 않습니다.'),
+                                        actions: <Widget>[
+                                          TextButton(
+                                            child: Text('취소'),
+                                            onPressed: () {
+                                              Navigator.of(context).pop(false);
+                                            },
+                                          ),
+                                          TextButton(
+                                            child: Text('삭제'),
+                                            onPressed: () {
+                                              Navigator.of(context).pop(true);
+                                            },
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  );
+                                },
+                                onDismissed: (direction) {
+                                  _deleteMemoAndBall(index);
+                                },
+                                child: ListTile(
+                                  leading: Text(memo.emoji, style: TextStyle(fontSize: 24)),
+                                  title: Text(memo.text),
+                                  subtitle: Text(
+                                    '${memo.createdAt.hour}:${memo.createdAt.minute.toString().padLeft(2, '0')}',
+                                    style: TextStyle(fontSize: 12),
                                   ),
-                                  if (index < sharedMemos.length - 1)
-                                    Divider(),
-                                ],
+                                ),
                               );
                             },
                           ),
@@ -388,27 +390,6 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
                 ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildFriendCircle(Friend friend) {
-    return GestureDetector(
-      onTapDown: (details) => _addBall(friend.color, 20, DateTime.now()),
-      onLongPress: () => _addBall(friend.color, 20, DateTime.now()),
-      child: Column(
-        children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: friend.color,
-              shape: BoxShape.circle,
-            ),
-          ),
-          SizedBox(height: 4),
-          Text(friend.name, style: TextStyle(fontSize: 12)),
-        ],
       ),
     );
   }

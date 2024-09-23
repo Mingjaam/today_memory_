@@ -5,7 +5,7 @@ class EmojiPicker extends StatelessWidget {
 
   EmojiPicker({required this.onEmojiSelected});
 
-  final List<String> emojis = ['😊', '😃', '😍', '🥳', '😎', '🤔', '😢', '😡', '😴', '😌', '🥰', '😂'];
+  final List<String> emojis = ['😡', '😊', '😎', '😢', '😴', '😐', '🥰', '🤔'];
 
   @override
   Widget build(BuildContext context) {

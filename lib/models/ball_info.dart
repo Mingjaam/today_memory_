@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:forge2d/forge2d.dart';
 
 class BallInfo {
   final DateTime createdAt;
@@ -45,14 +44,4 @@ class BallInfo {
       y: y,
     );
   }
-}
-
-class BallInfoWithPosition {
-  final BallInfo ballInfo;
-  Vector2 position;
-
-  BallInfoWithPosition({
-    required this.ballInfo,
-    required this.position,
-  });
 }
