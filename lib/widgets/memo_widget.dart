@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../utils/emiji_picker.dart';
+import '../services/ball_storage_service.dart';
 
 class MemoWidget extends StatefulWidget {
   final DateTime date;
@@ -16,6 +17,31 @@ class _MemoWidgetState extends State<MemoWidget> {
   String selectedEmoji = '😊';
   TextEditingController _textController = TextEditingController();
   bool _isButtonDisabled = false;
+  int _memoCount = 0;
+  final BallStorageService _ballStorageService = BallStorageService();
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMemoCount();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _textController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadMemoCount() async {
+    final memos = await _ballStorageService.loadMemos(widget.date);
+    if (mounted) {
+      setState(() {
+        _memoCount = memos.length;
+      });
+    }
+  }
 
   void _openEmojiPicker() {
     showDialog(
@@ -23,9 +49,11 @@ class _MemoWidgetState extends State<MemoWidget> {
       builder: (BuildContext context) {
         return EmojiPicker(
           onEmojiSelected: (emoji) {
-            setState(() {
-              selectedEmoji = emoji;
-            });
+            if (mounted) {
+              setState(() {
+                selectedEmoji = emoji;
+              });
+            }
           },
         );
       },
@@ -36,13 +64,19 @@ class _MemoWidgetState extends State<MemoWidget> {
     if (!_isButtonDisabled && _textController.text.trim().isNotEmpty) {
       widget.onShare(selectedEmoji, _textController.text);
       _textController.clear();
-      setState(() {
-        _isButtonDisabled = true;
-      });
-      Timer(Duration(seconds: 1), () {
+      if (mounted) {
         setState(() {
-          _isButtonDisabled = false;
+          _isButtonDisabled = true;
+          _memoCount++;
         });
+      }
+      _timer?.cancel();
+      _timer = Timer(Duration(seconds: 2), () {
+        if (mounted) {
+          setState(() {
+            _isButtonDisabled = false;
+          });
+        }
       });
     }
   }
@@ -69,12 +103,20 @@ class _MemoWidgetState extends State<MemoWidget> {
               ),
             ),
             Spacer(),
-            IconButton(
-              icon: Icon(Icons.send),
-              onPressed: (_isButtonDisabled || _textController.text.trim().isEmpty)
-                  ? null  // 텍스트가 비어있거나 버튼이 비활성화되면 null 반환
-                  : _shareMemo,
-              tooltip: '저장하기',
+            Column(
+              children: [
+                IconButton(
+                  icon: Icon(Icons.send),
+                  onPressed: (_isButtonDisabled || _textController.text.trim().isEmpty)
+                      ? null
+                      : _shareMemo,
+                  tooltip: '저장하기',
+                ),
+                Text(
+                  '$_memoCount/18',
+                  style: TextStyle(fontSize: 10),
+                ),
+              ],
             ),
           ],
         ),

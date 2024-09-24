@@ -157,7 +157,8 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
 
   Color _getColorFromEmoji(String emoji) {
     switch (emoji) {
-      case '😡': return Colors.red;
+      case '😠': return Colors.red;
+      case '😩': return Colors.red;
       case '😊': return const Color(0xFFFFD700);
       case '😎': return const Color(0xFFFFD700);
       case '😢': return Colors.blue;
@@ -201,6 +202,10 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
     _saveMemos();
     widget.onMemoAdded(newMemo);
     _addBallFromEmoji(emoji, text, createdAt);
+    
+    // 여기에 저장 로직 추가
+    _saveBalls();
+    _ballStorageService.saveNewBallInfos(_newBallInfos);
   }
 
   Future<void> _deleteMemoAndBall(int index) async {
@@ -309,15 +314,7 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
                               child: MemoWidget(
                                 date: widget.selectedDate,
                                 onShare: (String emoji, String text) {
-                                  setState(() {
-                                    sharedMemos.add(SharedMemo(
-                                      emoji: emoji,
-                                      text: text,
-                                      createdAt: DateTime.now(),
-                                      date: widget.selectedDate,
-                                    ));
-                                    _addBallFromEmoji(emoji, text, DateTime.now());
-                                  });
+                                  _addMemo(emoji, text);  // 여기서 _addMemo 호출
                                 },
                               ),
                             ),

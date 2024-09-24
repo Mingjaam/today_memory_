@@ -5,24 +5,24 @@ class EmojiPicker extends StatelessWidget {
 
   EmojiPicker({required this.onEmojiSelected});
 
-  final List<String> emojis = ['😡', '😊', '😎', '😢', '😴', '😐', '🥰', '🤔'];
+  final List<String> emojis = ['🥰', '😊', '😎', '🤔', '😐', '😴', '😢', '😩', '😠'];
 
   @override
   Widget build(BuildContext context) {
     return Dialog(
       child: Container(
-        width: 250, // 너비 고정
-        height: 250, // 높이 고정
+        width: 300, // 너비 고정
+        height: 340, // 높이 고정
         padding: EdgeInsets.all(12),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('이모지 선택', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            SizedBox(height: 12),
+            Text('지금 기분은 어떤가요', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+            SizedBox(height: 20),
             Expanded(
               child: GridView.builder(
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 4,
+                  crossAxisCount: 3,
                   childAspectRatio: 1,
                   crossAxisSpacing: 10,
                   mainAxisSpacing: 10,
