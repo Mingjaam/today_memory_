@@ -107,13 +107,13 @@ class _MemoWidgetState extends State<MemoWidget> {
               children: [
                 IconButton(
                   icon: Icon(Icons.send),
-                  onPressed: (_isButtonDisabled || _textController.text.trim().isEmpty)
+                  onPressed: (_isButtonDisabled || _textController.text.trim().isEmpty || _memoCount >= 15)
                       ? null
                       : _shareMemo,
                   tooltip: '저장하기',
                 ),
                 Text(
-                  '$_memoCount/18',
+                  '$_memoCount/15',
                   style: TextStyle(fontSize: 10),
                 ),
               ],

@@ -11,6 +11,10 @@ class EmojiPicker extends StatelessWidget {
   Widget build(BuildContext context) {
     return Dialog(
       child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+        ),
         width: 300, // 너비 고정
         height: 340, // 높이 고정
         padding: EdgeInsets.all(12),
@@ -36,7 +40,7 @@ class EmojiPicker extends StatelessWidget {
                     },
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colors.grey[200],
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Center(
