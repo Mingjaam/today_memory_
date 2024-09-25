@@ -47,7 +47,7 @@ class PhysicsEngine {
     final fixtureDef = FixtureDef(shape)
       ..density = 1.0
       ..friction = 0.3
-      ..restitution = 0.6;
+      ..restitution = 0.3;
     body.createFixture(fixtureDef);
   
     // 초기 속도 부여

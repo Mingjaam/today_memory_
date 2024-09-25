@@ -89,7 +89,7 @@ class _MemoWidgetState extends State<MemoWidget> {
         Expanded(
           child: TextField(
             controller: _textController,
-            decoration: InputDecoration(hintText: '메모를 입력하세요'),
+            decoration: InputDecoration(hintText: '기억을 적어봐요.'),
             maxLines: null,
             expands: true,
           ),

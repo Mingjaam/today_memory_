@@ -94,7 +94,7 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
         ballRadius
       ),
       radius: ballRadius,
-      restitution: 0.8,
+      restitution: 0.5,
       color: color,
     );
     setState(() {

@@ -111,9 +111,18 @@ class _FullCalendarState extends State<FullCalendar> with SingleTickerProviderSt
           padding: EdgeInsets.symmetric(
             horizontal: 16.0
           ),
-          child: Text(
-            "${_focusedDay.year}년, ${_focusedDay.month}월의 기억들..",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          child: Row(
+            children: [
+              Text(
+                "DayO",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue),
+              ),
+              Expanded(child: SizedBox()), // 이 부분은 "DayO"와 날짜 사이에 공간을 만듭니다.
+              Text(
+                "${_focusedDay.year}년, ${_focusedDay.month}월의 기억",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ],
           ),
         ),
         TableCalendar(
@@ -197,7 +206,7 @@ class _FullCalendarState extends State<FullCalendar> with SingleTickerProviderSt
     return Container(
       margin: EdgeInsets.all(1), // 여백을 줄여 셀 사이의 간격을 좁힙니다.
       decoration: BoxDecoration(
-        color: isSelected ? Colors.blue.withOpacity(0.0) : (isToday ? Colors.blue.withOpacity(0.1) : null),
+        color: isSelected ? Colors.blue.withOpacity(0.1) : (isToday ? Colors.blue.withOpacity(0.1) : null),
         border: Border.all(color: Colors.grey.shade300), // 모든 셀에 테두리를 추가합니다.
         borderRadius: BorderRadius.circular(4),
       ),

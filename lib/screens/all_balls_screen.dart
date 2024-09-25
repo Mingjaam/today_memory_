@@ -5,6 +5,7 @@ import '../services/ball_storage_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'dart:math';
+import '../services/ad_service.dart';
 
 class AllBallsScreen extends StatefulWidget {
   AllBallsScreen({Key? key}) : super(key: key);
@@ -18,12 +19,12 @@ class AllBallsScreenState extends State<AllBallsScreen> with SingleTickerProvide
   static const double BALL_DENSITY = 1.5;  // 공 밀도
   static const double BALL_FRICTION = 0.4;  // 공 마찰
   static const double BALL_RESTITUTION = 0.3;  // 공 반발력
-  static const double ALL_BALLS_SCREEN_BALL_RADIUS = 6.0;  // 이 화면에서 생성되는 공의 반지름
+  static const double ALL_BALLS_SCREEN_BALL_RADIUS = 12.0;  // 이 화면에서 생성되는 공의 반지름
   
   // 벽 상수
   static const double WALL_DENSITY = 1.5;  // 벽 밀도
   static const double WALL_FRICTION = 0.3;  // 벽 마찰
-  static const double WALL_RESTITUTION = 0.3;  // 벽 반발력
+  static const double WALL_RESTITUTION = 0.3;  // 벽 반발
   static const double BOTTOM_WALL_HEIGHT_RATIO = 0.27;  // 하단 벽 높이 비율
 
   final BallStorageService _ballStorageService = BallStorageService();
@@ -32,9 +33,11 @@ class AllBallsScreenState extends State<AllBallsScreen> with SingleTickerProvide
   int _newBallIndex = 0;
   late AnimationController _animationController;
   late World _world;
-  int _totalBallCount = 0;  // 전체 공 수
   bool _isInitialized = false;
   bool _needsSave = false;
+  int _ballAddCount = 0;  // 공 추가 횟수를 추적하는 새 변수
+  final AdService _adService = AdService();
+  bool _isAdRemoved = false;
 
   @override
   bool get wantKeepAlive => true;
@@ -46,6 +49,8 @@ class AllBallsScreenState extends State<AllBallsScreen> with SingleTickerProvide
     _initializeScreen();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _addWalls();
+      _loadBallAddCount();  // 추가
+      _loadAdRemovalStatus();
     });
   }
 
@@ -54,6 +59,7 @@ class AllBallsScreenState extends State<AllBallsScreen> with SingleTickerProvide
     await loadBalls();
     await _loadNewBallInfos();
     await _loadAllBalls();
+    await _loadBallAddCount();  // 추가
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 1),
@@ -68,7 +74,7 @@ class AllBallsScreenState extends State<AllBallsScreen> with SingleTickerProvide
     _clearBalls(); // 기존 공들 모두 제거
     await _loadSavedBalls();
     await _loadNewBallInfos();
-    _updateTotalBallCount();
+    // _updateTotalBallCount() 호출 제거
   }
 
   Future<void> saveBalls() async {
@@ -100,7 +106,7 @@ class AllBallsScreenState extends State<AllBallsScreen> with SingleTickerProvide
 
   Future<void> _loadAllBalls() async {
     final allBalls = await _ballStorageService.loadAllBalls();
-    _totalBallCount = allBalls.values.fold(0, (sum, list) => sum + list.length);
+    // _totalBallCount 관련 코드 제거
     setState(() {});
   }
 
@@ -121,14 +127,11 @@ class AllBallsScreenState extends State<AllBallsScreen> with SingleTickerProvide
     }
     setState(() {
       _balls.clear();
-      _totalBallCount = 0;
+      // _totalBallCount = 0; 제거
     });
   }
 
-  void _updateTotalBallCount() {
-    _totalBallCount = _balls.length + (_newBallInfos.length - _newBallIndex);
-    setState(() {});
-  }
+  // _updateTotalBallCount() 메서드 제거
 
   Future<void> reloadBalls() async {
     await loadBalls();
@@ -138,6 +141,7 @@ class AllBallsScreenState extends State<AllBallsScreen> with SingleTickerProvide
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _saveBalls();
+    _saveBallAddCount();  // 추가
     _animationController.dispose();
     super.dispose();
   }
@@ -146,14 +150,16 @@ class AllBallsScreenState extends State<AllBallsScreen> with SingleTickerProvide
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
       _saveBalls();
+      _saveBallAddCount();  // 추가
     } else if (state == AppLifecycleState.resumed) {
       loadBalls();
+      _loadBallAddCount();  // 추가
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);  // AutomaticKeepAliveClientMixin 사용 시 필요
+    super.build(context);
     if (!_isInitialized) {
       return Center(child: CircularProgressIndicator());
     }
@@ -172,11 +178,9 @@ class AllBallsScreenState extends State<AllBallsScreen> with SingleTickerProvide
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('전체 기억: $_totalBallCount'),
-                  Text('저장 기억: ${_balls.length}'),
-                  Text('남은 기억: ${_newBallInfos.length - _newBallIndex}'),
+                  Text('내 기억의 수: ${_balls.length}', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
@@ -196,8 +200,16 @@ class AllBallsScreenState extends State<AllBallsScreen> with SingleTickerProvide
         ),
         floatingActionButton: _newBallIndex < _newBallInfos.length
           ? FloatingActionButton(
-              onPressed: addNewBall,
-              child: Icon(Icons.add),
+              onPressed: _isAdRemoved || _ballAddCount % 6 != 5 ? addNewBall : showAd,
+              child: _isAdRemoved || _ballAddCount % 6 != 5
+                ? Text(
+                    '${_newBallInfos.length - _newBallIndex}',
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+                  )
+                : Icon(Icons.ad_units, color: Colors.white),
+              backgroundColor: _isAdRemoved || _ballAddCount % 6 != 5
+                ? const Color.fromARGB(255, 238, 184, 248)
+                : Colors.orange,
             )
           : null,
       ),
@@ -208,6 +220,7 @@ class AllBallsScreenState extends State<AllBallsScreen> with SingleTickerProvide
     if (!mounted) return;
     final screenSize = MediaQuery.of(context).size;
     final bottomWallHeight = screenSize.height * BOTTOM_WALL_HEIGHT_RATIO;
+
 
     final walls = [
       Wall(Vector2(0, 0), Vector2(screenSize.width, 0)),  // 상단 벽
@@ -234,18 +247,18 @@ class AllBallsScreenState extends State<AllBallsScreen> with SingleTickerProvide
       final newBallInfo = _newBallInfos[_newBallIndex];
       final screenSize = MediaQuery.of(context).size;
       
-      // 상단부 중앙 근처로 초기 위치 설정
       final position = Vector2(
-        screenSize.width * 0.5 + (Random().nextDouble() - 0.5) * 20,  // 중앙에서 좌우로 ±20 픽셀 범위 내 랜덤
-        screenSize.height * 0.1  // 상단에서 화면 높이의 10% 위치
+        screenSize.width * 0.5 + (Random().nextDouble() - 0.5) * 20,
+        screenSize.height * 0.1
       );
 
       final ball = Ball(_world, position, ALL_BALLS_SCREEN_BALL_RADIUS, newBallInfo.color, newBallInfo.createdAt);
       setState(() {
         _balls.add(ball);
         _newBallIndex++;
-        _totalBallCount++;
+        _ballAddCount++;  // 공 추가 횟수 증가
       });
+      _saveBallAddCount();  // 추가
 
       if (_newBallIndex == _newBallInfos.length) {
         _ballStorageService.clearNewBallInfos();
@@ -253,10 +266,57 @@ class AllBallsScreenState extends State<AllBallsScreen> with SingleTickerProvide
     }
   }
 
+  void showAd() async {
+    if (_isAdRemoved) {
+      addNewBall();
+      return;
+    }
+    
+    print("광고를 표시합니다.");
+    bool adShown = await _adService.showAd();
+    if (adShown) {
+      setState(() {
+        _ballAddCount = 0;
+      });
+      _saveBallAddCount();
+      addNewBall();
+    } else {
+      print("광고 표시에 실패했습니다.");
+    }
+  }
+
   void resetState() {
     _clearBalls();
     _newBallIndex = 0;
-    _updateTotalBallCount();
+    // _updateTotalBallCount(); 제거
+  }
+
+  Future<void> _saveBallAddCount() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('ballAddCount', _ballAddCount);
+  }
+
+  Future<void> _loadBallAddCount() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _ballAddCount = prefs.getInt('ballAddCount') ?? 0;
+    });
+  }
+
+  Future<void> _loadAdRemovalStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isAdRemoved = prefs.getBool('isAdRemoved') ?? false;
+    });
+  }
+
+  // 광고 제거 구매 시 호출되는 함수
+  Future<void> removeAds() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isAdRemoved', true);
+    setState(() {
+      _isAdRemoved = true;
+    });
   }
 }
 

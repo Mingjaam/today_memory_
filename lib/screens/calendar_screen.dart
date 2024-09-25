@@ -104,6 +104,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
             label: '설정',
           ),
         ],
+        showSelectedLabels: false,
+        showUnselectedLabels: false,
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.blue,
         unselectedItemColor: Colors.grey,
