@@ -261,6 +261,7 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           title: Text('기억 한도 늘리기'),
           content: Text('광고를 보고 기억 한도를 늘리시겠습니까? (남은 횟수: $_remainingAdViews)'),
           actions: <Widget>[
