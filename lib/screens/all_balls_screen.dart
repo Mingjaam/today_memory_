@@ -16,8 +16,8 @@ class AllBallsScreen extends StatefulWidget {
 class AllBallsScreenState extends State<AllBallsScreen> with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   // 물리 상수
   static const double GRAVITY_Y = 150;  // 중력 (Y축)
-  static const double BALL_DENSITY = 1.5;  // 공 밀도
-  static const double BALL_FRICTION = 0.4;  // 공 마찰
+  static const double BALL_DENSITY = 0.3;  // 공 밀도(무게)
+  static const double BALL_FRICTION = 1.5;  // 공 마찰
   static const double BALL_RESTITUTION = 0.3;  // 공 반발력
   static const double ALL_BALLS_SCREEN_BALL_RADIUS = 12.0;  // 이 화면에서 생성되는 공의 반지름
   
