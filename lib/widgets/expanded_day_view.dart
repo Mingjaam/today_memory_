@@ -5,6 +5,8 @@ import 'memo_widget.dart';
 import '../models/ball_info.dart';
 import '../models/stored_memo.dart';
 import '../services/ball_storage_service.dart';
+import '../services/memo_limit_service.dart';
+import '../services/ad_service.dart';
 
 class ExpandedDayView extends StatefulWidget {
   final DateTime selectedDate;
@@ -34,12 +36,18 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
   late double dateBoxHeight;
 
   final _ballStorageService = BallStorageService();
+  final MemoLimitService _memoLimitService = MemoLimitService();
+  final AdService _adService = AdService();
+  int _currentMemoLimit = 12;
 
   bool _needsSave = false;
   int _frameCount = 0;
   static const int SAVE_INTERVAL = 60;
   List<SharedMemo> sharedMemos = [];
   List<BallInfo> _newBallInfos = []; // 새로 추가된 공 정보를 저장할 리스트
+  int _remainingAdViews = 3; // 남은 광고 시청 횟수
+
+  final double _ballRadiusRatio = 0.15; // dateBox 너비의 3%로 설정
 
   @override
   void initState() {
@@ -53,6 +61,7 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
       _addWalls();
       _loadMemos();
       _loadNewBallInfos(); // 새로운 메서드 호출
+      _loadMemoLimit();
     });
   }
 
@@ -74,16 +83,17 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
     }
   }
 
-  void _addBall(Color color, double size, DateTime createdAt) {
+  void _addBall(Color color, DateTime createdAt) {
     final random = math.Random();
+    final ballRadius = dateBoxWidth * _ballRadiusRatio;
     final ball = Ball(
       createdAt: createdAt,
       world,
       position: Vector2(
         random.nextDouble() * dateBoxWidth,
-        size
+        ballRadius
       ),
-      radius: size,
+      radius: ballRadius,
       restitution: 0.8,
       color: color,
     );
@@ -136,14 +146,14 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
 
   void _addBallFromEmoji(String emoji, String text, DateTime createdAt) {
     final color = _getColorFromEmoji(emoji);
-    final size = 20.0;
+    final ballRadius = dateBoxWidth * _ballRadiusRatio;
     
     final newBallInfo = BallInfo(
       createdAt: createdAt,
       color: color,
-      radius: size,
-      x: 0.5, // 초기 위치를 중앙으로 설정
-      y: 0.1, // 초기 위치를 상단으로 설정
+      radius: ballRadius,
+      x: 0.5,
+      y: 0.1,
     );
     
     setState(() {
@@ -151,8 +161,7 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
     });
     _ballStorageService.saveNewBallInfos(_newBallInfos);
     
-    // 실제 공 추가는 여기서만 수행
-    _addBall(color, size, createdAt);
+    _addBall(color, createdAt);
   }
 
   Color _getColorFromEmoji(String emoji) {
@@ -173,7 +182,7 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
   Future<void> _loadMemos() async {
     final loadedMemos = await _ballStorageService.loadMemos(widget.selectedDate);
     setState(() {
-      sharedMemos = loadedMemos;
+      sharedMemos = loadedMemos ?? [];
     });
   }
 
@@ -209,6 +218,10 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
   }
 
   Future<void> _deleteMemoAndBall(int index) async {
+    if (index < 0 || index >= sharedMemos.length) {
+      print('Invalid index: $index');
+      return;
+    }
     final deletedMemo = sharedMemos[index];
     await _ballStorageService.deleteMemoAndBallEverywhere(widget.selectedDate, deletedMemo);
     
@@ -218,8 +231,8 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
     });
     
     widget.onMemoDeleted(deletedMemo);
-    await _loadBalls();  // 공 목록을 다시 로드합니다.
-    await _loadNewBallInfos();  // 새 공 정보를 다시 로드합니다.
+    await _loadBalls();
+    await _loadNewBallInfos();
   }
 
   bool _isSameDateTime(DateTime a, DateTime b) {
@@ -235,6 +248,51 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
     final now = DateTime.now();
     final tomorrow = DateTime(now.year, now.month, now.day + 1);
     return widget.selectedDate.isAtSameMomentAs(tomorrow) || widget.selectedDate.isAfter(tomorrow);
+  }
+
+  Future<void> _loadMemoLimit() async {
+    _currentMemoLimit = await _memoLimitService.getMemoLimit(widget.selectedDate);
+    setState(() {});
+  }
+
+  Future<void> _showAdDialog() async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('기억 한도 늘리기'),
+          content: Text('광고를 보고 기억 한도를 늘리시겠습니까? (남은 횟수: $_remainingAdViews)'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('취소'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('광고 보기'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _increaseMemoLimit();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _increaseMemoLimit() async {
+    if (_currentMemoLimit < 15 && _remainingAdViews > 0) {
+      bool adWatched = await _adService.showAd();
+      if (adWatched) {
+        _currentMemoLimit = await _memoLimitService.increaseMemoLimit(widget.selectedDate);
+        setState(() {
+          _remainingAdViews--;
+        });
+      }
+    }
   }
 
   @override
@@ -260,7 +318,13 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
             appBar: AppBar(
               backgroundColor: Colors.white,
               elevation: 0,
-              title: Text('오늘은 무슨 일이 있었나요?', style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold)),
+              leading: _currentMemoLimit < 15 && _remainingAdViews > 0
+                ? IconButton(
+                    icon: Icon(Icons.add, color: Colors.black),
+                    onPressed: _showAdDialog,
+                  )
+                : null,
+              title: Text('기억을 추가해보세요', style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold)),
               actions: [
                 IconButton(
                   icon: Icon(Icons.close, color: Colors.black),
@@ -314,8 +378,15 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
                               child: MemoWidget(
                                 date: widget.selectedDate,
                                 onShare: (String emoji, String text) {
-                                  _addMemo(emoji, text);  // 여기서 _addMemo 호출
+                                  if (sharedMemos.length < _currentMemoLimit) {
+                                    _addMemo(emoji, text);
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('오늘의 메모 한도에 도달했습니다.')),
+                                    );
+                                  }
                                 },
+                                memoLimit: _currentMemoLimit,
                               ),
                             ),
                           ),
@@ -324,59 +395,61 @@ class _ExpandedDayViewState extends State<ExpandedDayView> with SingleTickerProv
                       Expanded(
                         child: Container(
                           margin: EdgeInsets.all(16),
-                          child: ListView.builder(
-                            itemCount: sharedMemos.length,
-                            itemBuilder: (context, index) {
-                              final memo = sharedMemos[index];
-                              return Dismissible(
-                                key: Key(memo.createdAt.toString()),
-                                direction: DismissDirection.endToStart,
-                                background: Container(
-                                  color: Colors.red,
-                                  alignment: Alignment.centerRight,
-                                  padding: EdgeInsets.symmetric(horizontal: 20),
-                                  child: Icon(Icons.delete, color: Colors.white),
-                                ),
-                                confirmDismiss: (direction) async {
-                                  return await showDialog(
-                                    context: context,
-                                    builder: (BuildContext context) {
-                                      return AlertDialog(
-                                        backgroundColor: Colors.white,
-                                        title: Text('삭제'),
-                                        content: Text('이 기억을 삭제 하시겠습니까? \n당신의 머리속에서 사라지진 않습니다.'),
-                                        actions: <Widget>[
-                                          TextButton(
-                                            child: Text('취소'),
-                                            onPressed: () {
-                                              Navigator.of(context).pop(false);
-                                            },
-                                          ),
-                                          TextButton(
-                                            child: Text('삭제'),
-                                            onPressed: () {
-                                              Navigator.of(context).pop(true);
-                                            },
-                                          ),
-                                        ],
+                          child: sharedMemos.isEmpty
+                            ? Center(child: Text('아직 기억이 없습니다. 새로운 기억을 추가해보세요!'))
+                            : ListView.builder(
+                                itemCount: sharedMemos.length,
+                                itemBuilder: (context, index) {
+                                  final memo = sharedMemos[index];
+                                  return Dismissible(
+                                    key: Key(memo.createdAt.toString()),
+                                    direction: DismissDirection.endToStart,
+                                    background: Container(
+                                      color: Colors.red,
+                                      alignment: Alignment.centerRight,
+                                      padding: EdgeInsets.symmetric(horizontal: 20),
+                                      child: Icon(Icons.delete, color: Colors.white),
+                                    ),
+                                    confirmDismiss: (direction) async {
+                                      return await showDialog(
+                                        context: context,
+                                        builder: (BuildContext context) {
+                                          return AlertDialog(
+                                            backgroundColor: Colors.white,
+                                            title: Text('삭제'),
+                                            content: Text('이 기억을 삭제 하시겠습니까? \n당신의 머리속에서 사라지진 않습니다.'),
+                                            actions: <Widget>[
+                                              TextButton(
+                                                child: Text('취소'),
+                                                onPressed: () {
+                                                  Navigator.of(context).pop(false);
+                                                },
+                                              ),
+                                              TextButton(
+                                                child: Text('삭제'),
+                                                onPressed: () {
+                                                  Navigator.of(context).pop(true);
+                                                },
+                                              ),
+                                            ],
+                                          );
+                                        },
                                       );
                                     },
+                                    onDismissed: (direction) {
+                                      _deleteMemoAndBall(index);
+                                    },
+                                    child: ListTile(
+                                      leading: Text(memo.emoji, style: TextStyle(fontSize: 24)),
+                                      title: Text(memo.text),
+                                      subtitle: Text(
+                                        '${memo.createdAt.hour}:${memo.createdAt.minute.toString().padLeft(2, '0')}',
+                                        style: TextStyle(fontSize: 12),
+                                      ),
+                                    ),
                                   );
                                 },
-                                onDismissed: (direction) {
-                                  _deleteMemoAndBall(index);
-                                },
-                                child: ListTile(
-                                  leading: Text(memo.emoji, style: TextStyle(fontSize: 24)),
-                                  title: Text(memo.text),
-                                  subtitle: Text(
-                                    '${memo.createdAt.hour}:${memo.createdAt.minute.toString().padLeft(2, '0')}',
-                                    style: TextStyle(fontSize: 12),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
+                              ),
                         ),
                       ),
                     ],

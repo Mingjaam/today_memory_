@@ -29,7 +29,7 @@ class _FullCalendarState extends State<FullCalendar> with SingleTickerProviderSt
   Map<DateTime, List<BallInfo>> _ballsMap = {};
   Map<DateTime, PhysicsEngine> _physicsEngines = {};
   late AnimationController _animationController;
-  final double _ballRadiusRatio = 0.4;
+  final double _ballRadiusRatio = 0.39;
 
   @override
   void initState() {
@@ -106,7 +106,7 @@ class _FullCalendarState extends State<FullCalendar> with SingleTickerProviderSt
   Widget build(BuildContext context) {
     return Column(
       children: [
-        SizedBox(height: MediaQuery.of(context).size.height * 0.08), // 스크린 높이의 2% 여백 추가
+        SizedBox(height: MediaQuery.of(context).size.height * 0.07), // 스크린 높이의 2% 여백 추가
         Padding(
           padding: EdgeInsets.symmetric(
             horizontal: 16.0
@@ -191,13 +191,14 @@ class _FullCalendarState extends State<FullCalendar> with SingleTickerProviderSt
     } else if (day.weekday == DateTime.saturday) {
       dayColor = Colors.blue;
     } else {
-      dayColor = isSelected ? Colors.blue : (isToday ? Colors.blue : Colors.black);
+      dayColor = isSelected ? Colors.black : (isToday ? Colors.blue : Colors.black);
     }
     
     return Container(
-      margin: EdgeInsets.all(2),
+      margin: EdgeInsets.all(1), // 여백을 줄여 셀 사이의 간격을 좁힙니다.
       decoration: BoxDecoration(
-        color: isSelected ? Colors.blue.withOpacity(0.3) : (isToday ? Colors.blue.withOpacity(0.1) : null),
+        color: isSelected ? Colors.blue.withOpacity(0.0) : (isToday ? Colors.blue.withOpacity(0.1) : null),
+        border: Border.all(color: Colors.grey.shade300), // 모든 셀에 테두리를 추가합니다.
         borderRadius: BorderRadius.circular(4),
       ),
       child: Stack(
@@ -205,12 +206,13 @@ class _FullCalendarState extends State<FullCalendar> with SingleTickerProviderSt
           Align(
             alignment: Alignment.topLeft,
             child: Padding(
-              padding: const EdgeInsets.all(4.0),
+              padding: const EdgeInsets.all(3.0), // 패딩을 줄여 날짜 텍스트의 위치를 조정합니다.
               child: Text(
                 '${day.day}',
                 style: TextStyle(
                   color: dayColor,
                   fontWeight: isSelected || isToday ? FontWeight.bold : null,
+                  fontSize: 14, // 글자 크기를 줄여 더 많은 공간을 확보합니다.
                 ),
               ),
             ),

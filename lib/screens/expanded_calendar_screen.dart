@@ -42,11 +42,13 @@ class _ExpandedCalendarScreenState extends State<ExpandedCalendarScreen> {
               ),
               Expanded(
                 flex: 1,
-                child: MemoWidget(
+                child: 
+                MemoWidget(
                   date: widget.selectedDate,
                   onShare: (String emoji, String text) {
                     addMemo(emoji, text);
                   },
+                  memoLimit: 5, // 또는 원하는 숫자로 설정
                 ),
               ),
             ],

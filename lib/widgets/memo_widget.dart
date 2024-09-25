@@ -6,8 +6,9 @@ import '../services/ball_storage_service.dart';
 class MemoWidget extends StatefulWidget {
   final DateTime date;
   final Function(String emoji, String text) onShare;
+  final int memoLimit;
 
-  MemoWidget({required this.date, required this.onShare});
+  MemoWidget({required this.date, required this.onShare, required this.memoLimit});
 
   @override
   _MemoWidgetState createState() => _MemoWidgetState();
@@ -107,13 +108,13 @@ class _MemoWidgetState extends State<MemoWidget> {
               children: [
                 IconButton(
                   icon: Icon(Icons.send),
-                  onPressed: (_isButtonDisabled || _textController.text.trim().isEmpty || _memoCount >= 15)
+                  onPressed: (_isButtonDisabled || _textController.text.trim().isEmpty || _memoCount >= widget.memoLimit)
                       ? null
                       : _shareMemo,
                   tooltip: '저장하기',
                 ),
                 Text(
-                  '$_memoCount/15',
+                  '$_memoCount/${widget.memoLimit}',
                   style: TextStyle(fontSize: 10),
                 ),
               ],

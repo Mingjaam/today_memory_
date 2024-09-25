@@ -19,7 +19,7 @@ class PhysicsEngine {
 
   void _addWalls() {
     final margin = 5.0; // 벽과 셀 경계 사이의 여백
-    final topLeft = Vector2(margin, margin);
+    final topLeft = Vector2(margin, margin+10);
     final bottomRight = Vector2(worldWidth - margin, worldHeight - margin);
 
     // 바닥
